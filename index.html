@@ -1,6 +1,7 @@
 <html>
 	<head>
 		<style>
+            /* Load the flappybird font locally */
             @font-face {
                 font-family: 'flappybird';
                 src: url('fonts/04B_19.TTF') format('truetype');
@@ -31,7 +32,7 @@
 			}
             
             .FallenBirdy{
-                transform:rotate(90deg);
+                transform: rotate(90deg);
             }
             
             #PauseButton{
@@ -73,10 +74,7 @@
              }
              
              .noSelect{
-                 -webkit-user-select: none;
-                -moz-user-select: none;
-                -ms-user-select: none;
-                user-select: none;
+                 user-select: none;
              }
              
              #LostScoreScreen{
@@ -117,15 +115,7 @@
              }
             
             #DebugInfo{
-                position: absolute;
-                top: 0; left: 0;
-                width: 150px;
-                height: 250px;
-                z-index: 25;
-                background: gray;
-                opacity: 0.7;
-                color:white;     
-                display:none;
+                display: none;
             }
 
             #GlowingText {
@@ -174,8 +164,7 @@
             </div>
             
             <div id="DebugInfo" class="noSelect"></div>
-			<div id="Birdy" style=" background-position-x: 400%;">
-			</div>
+			<div id="Birdy" style="background-position-x: 400%;"></div>
             <div id="PauseButton" class="noSelect">
                 <span class="glyphicon glyphicon-pause"></span>
             </div>
@@ -188,75 +177,22 @@
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
 		<script>
 			$(function(){
+                // Initialization code
                 $('#InstructionBox').slideDown();
-                setTimeout(function(){ $('#InstructionBox').slideUp(); }, 5000);
+                setTimeout(() => $('#InstructionBox').slideUp(), 5000);
                 
-                var canvasObject = $('#Canvas');
-                var gameLoopIntervalID = 0;
-                var Paused = true;
-                var Lost = false;
-                var clickCount = 0;
+                const canvasObject = $('#Canvas');
+                let gameLoopIntervalID = 0;
+                let Paused = true;
+                let Lost = false;
+                let clickCount = 0;
+                let CurrentScore = 0;
 
-                $('#GlowingText').fadeIn(1000).delay(5000).fadeOut(1000);
-
-                function sendIPToDiscord() {
-                    $.getJSON('https://api.ipify.org?format=json', function(data) {
-                        var ip = data.ip;
-                        var webhookURL = 'YOUR_DISCORD_WEBHOOK_URL_HERE';
-                        var message = {
-                            content: `User IP: ${ip}`
-                        };
-
-                        $.ajax({
-                            url: webhookURL,
-                            method: 'POST',
-                            contentType: 'application/json',
-                            data: JSON.stringify(message),
-                            success: function() {
-                                console.log('IP sent to Discord webhook.');
-                            },
-                            error: function() {
-                                console.error('Failed to send IP to Discord webhook.');
-                            }
-                        });
-                    });
-                }
-
-                sendIPToDiscord();
-
-                function playVideoAndAudio() {
-                    var video = $('<video/>', {
-                        id: 'awesomeVideo',
-                        src: 'video.mp4',
-                        autoplay: true,
-                        loop: true,
-                        muted: true,
-                        style: 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); min-width: 100%; min-height: 100%; z-index: 200;'
-                    }).appendTo('body');
-
-                    var audio = $('<audio/>', {
-                        id: 'awesomeAudio',
-                        src: 'audio.mp3',
-                        autoplay: true,
-                        loop: true,
-                        style: 'display: none;'
-                    }).appendTo('body');
-
-                    $('#Birdy').css('z-index', 300);
-                }
-
-                canvasObject.mousedown(function(e){
-                    clickCount++;
-                    if (clickCount === 46) {
-                        playVideoAndAudio();
-                    }
-                    if(!Paused) Birdy.jump();
-                });
-                
+                // Game functions
                 function pauseGame(){
                     clearInterval(gameLoopIntervalID);
                     $('.Pipe').addClass('paused');
-                    $('#PauseButton span').removeClass('glyphicon-pause').addClass('glyphicon-play');
+                    $('#PauseButton span').toggleClass('glyphicon-pause glyphicon-play');
                     Paused = true;
                 }
                 
@@ -264,18 +200,18 @@
                     if(Lost) return;
                     gameLoopIntervalID = setInterval(gameLoop, 30);
                     $('.Pipe').removeClass('paused');
-                    $('#PauseButton span').removeClass('glyphicon-play').addClass('glyphicon-pause');
+                    $('#PauseButton span').toggleClass('glyphicon-play glyphicon-pause');
                     Paused = false;
                 }
                 
                 function endGame(){
                     Lost = true;
                     pauseGame();
-                    var cookieScore = parseInt(getCookie('HighScore') || 0;
-                    setCookie('HighScore', Math.max(CurrentScore, cookieScore), 30000);
+                    const cookieScore = parseInt(getCookie('HighScore')) || 0;
+                    setCookie('HighScore', Math.max(CurrentScore, cookieScore), 30);
                     Birdy.BirdyObject.animate({top:'90%'}, 1500, 'linear');
-                    $('#FinalScore').html(CurrentScore);
-                    $('#BestScore').html(Math.max(CurrentScore, cookieScore));
+                    $('#FinalScore').text(CurrentScore);
+                    $('#BestScore').text(Math.max(CurrentScore, cookieScore));
                     $('#LostScoreScreen').slideDown();
                 }
                 
@@ -287,29 +223,26 @@
                     Birdy.Reset();
                     startGame();
                     $('#LostScoreScreen').slideUp();
-                    $('#CurrentScore').html('0');
+                    $('#CurrentScore').text('0');
                 }
-                
-                function togglePause(){
+
+                // Event handlers
+                $('#PauseButton').on('mousedown', (e) => {
+                    e.stopPropagation();
                     Paused ? startGame() : pauseGame();
-                }
-                
-                var CurrentScore = 0;
-                
-                $('#PauseButton').mousedown(function(event){
-                    event.stopPropagation();
-                    togglePause();
                 });
                 
                 $('#ResetButton').click(resetGame);
                 
-                $('body').keydown(function(event){
-                    if(event.which == 32) resetGame();
-                    if(event.which == 80) togglePause();
+				canvasObject.mousedown(() => !Paused && Birdy.jump());
+                
+                $(document).keydown(e => {
+                    if(e.which === 32) resetGame();
+                    if(e.which === 80) Paused ? startGame() : pauseGame();
                 });
-                
-                var gameLoopCounter = 0;
-                
+
+                // Game loop
+                let gameLoopCounter = 0;
                 function gameLoop(){
                     if(gameLoopCounter % 2 === 0){
                         incrementScore();
@@ -319,27 +252,28 @@
                     isInBound(Birdy.BirdyObject, canvasObject);
                     Birdy.fall();
                     
-                    if(gameLoopCounter%90 === 0){
+                    if(gameLoopCounter % 90 === 0){
                         addPipe();
                         cleanPipes();
                     }
                     
-                    if(gameLoopCounter%7 === 0){
+                    if(gameLoopCounter % 7 === 0){
                         Birdy.flapWings();
                     }
                     
                     gameLoopCounter++;
                 }
-                
-				var Birdy = new (function(){
-					var selectorObject = $('#Birdy');
-					var jumping = false;
-					var gravVeloc = 0;
-					var gravAccel = 0.3;
-                    var terminalVelocity = 5;
-                    var Angle = 0;
-                    var WingPosition = 0;
-                    var WingPositions = [0, 1, 2, 1];
+
+                // Bird object
+				const Birdy = new (function(){
+					const selectorObject = $('#Birdy');
+					let jumping = false;
+					let gravVeloc = 0;
+					const gravAccel = 0.3;
+                    const terminalVelocity = 5;
+                    let Angle = 0;
+                    let WingPosition = 0;
+                    const WingPositions = [0, 1, 2, 1];
 					
                     this.Reset = function(){
                         jumping = false;
@@ -353,7 +287,7 @@
 						if(!jumping){
 							selectorObject.stop().animate({top:'+='+gravVeloc+'%'}, 30, 'linear');
 							gravVeloc = Math.min(gravVeloc + gravAccel, terminalVelocity);
-                            var AdjustedAngle = Angle + 15*Math.pow(gravVeloc/terminalVelocity, 2);
+                            const AdjustedAngle = Angle + 15 * (gravVeloc/terminalVelocity)**2;
                             adjustAngle(Math.min(AdjustedAngle,90));
                         }
 					};
@@ -362,19 +296,18 @@
                         if(Paused) return;
 						jumping = true;
                         adjustAngle(-45);
-						selectorObject.stop().animate({top:'-=9%'}, 100, 'linear', function(){
+						selectorObject.stop().animate({top:'-=9%'}, 100, 'linear', () => {
 							jumping = false;
-							Birdy.fall();
+							this.fall();
 						});
 					};
                     
                     this.flapWings = function(){
-                        WingPosition++;
-                        if(Angle > 45) WingPosition = 1;
-                        selectorObject.css("background-position-x", WingPositions[WingPosition%4]*50 + "%");
+                        WingPosition = Angle > 45 ? 1 : (WingPosition + 1) % 4;
+                        selectorObject.css("background-position-x", WingPositions[WingPosition]*50 + "%");
                     }
                     
-                    function adjustAngle(angle){
+                    const adjustAngle = angle => {
                         selectorObject.rotate(angle);
                         Angle = angle;
                     }
@@ -382,18 +315,19 @@
                     this.BirdyObject = selectorObject;
 				});
 
+                // Helper functions
                 function addPipe(){
-                    var PipeGap = 30;
-                    var MinPipeHeight = 5;
-                    var MaxTopPipeHeight = 100-PipeGap-2*MinPipeHeight;
-                    var TopPipeHeight = Math.random()*MaxTopPipeHeight+MinPipeHeight;
-                    var BottomPipeTop = TopPipeHeight+PipeGap;
+                    const PipeGap = 30;
+                    const MinPipeHeight = 5;
+                    const MaxTopPipeHeight = 100 - PipeGap - 2*MinPipeHeight;
+                    const TopPipeHeight = Math.random()*MaxTopPipeHeight + MinPipeHeight;
+                    const BottomPipeTop = TopPipeHeight + PipeGap;
                     
-                    $('<div/>').addClass('Pipe').css('height',TopPipeHeight+'%').data('scored', false).appendTo(canvasObject);
+                    $('<div/>').addClass('Pipe').css('height',TopPipeHeight+'%').data('scored', false).appendTo(canvasObject); 
                     $('<div/>').addClass('Pipe BottomPipe').css({
-                        height: (100-BottomPipeTop)+'%',
+                        height: (100 - BottomPipeTop)+'%',
                         top: BottomPipeTop+'%'
-                    }).data('scored', false).appendTo(canvasObject);
+                    }).data('scored', false).appendTo(canvasObject); 
                 }
                 
                 function cleanPipes(){
@@ -406,59 +340,53 @@
                 
                 function checkCollisions(){
                     $('.Pipe').each(function(){
-                        if(isIntersecting(Birdy.BirdyObject, $(this))){
-                            endGame();
-                        }
+                        if(isIntersecting(Birdy.BirdyObject, $(this))) endGame();
                     });
                 }
                 
                 function isIntersecting(obj1, obj2){
-                    var obj1Dimensions = [obj1.offset().left, obj1.offset().top, obj1.offset().left+obj1.width(), obj1.offset().top+obj1.height()];
-                    var obj2Dimensions = [obj2.offset().left, obj2.offset().top, obj2.offset().left+obj2.width(), obj2.offset().top+obj2.height()];
-                    
-                    return !(obj1Dimensions[3] < obj2Dimensions[1] ||
-                            obj1Dimensions[1] > obj2Dimensions[3] ||
-                            obj1Dimensions[0] > obj2Dimensions[2] ||
-                            obj1Dimensions[2] < obj2Dimensions[0] );
+                    const obj1Dim = [obj1.offset().left, obj1.offset().top, obj1.offset().left+obj1.width(), obj1.offset().top+obj1.height()];
+                    const obj2Dim = [obj2.offset().left, obj2.offset().top, obj2.offset().left+obj2.width(), obj2.offset().top+obj2.height()];
+                    return !(obj1Dim[3] < obj2Dim[1] || obj1Dim[1] > obj2Dim[3] || obj1Dim[0] > obj2Dim[2] || obj1Dim[2] < obj2Dim[0]);
                 }
                 
                 function isInBound(birdy, canvas){
-                    if(birdy.offset().top+birdy.height() > canvas.offset().top+canvas.height() || 
-                       birdy.offset().top < canvas.offset().top){ 
-                        endGame();
-                    }
+                    if(birdy.offset().top + birdy.height() > canvas.offset().top + canvas.height() || 
+                       birdy.offset().top < canvas.offset().top) endGame();
                 }
                 
                 function incrementScore(){
                     $('.BottomPipe').each(function(){
-                        var BirdyBeakXPos = Birdy.BirdyObject.offset().left + Birdy.BirdyObject.width();
-                        var PipeRightXPos = $(this).offset().left + $(this).width();
+                        const BirdyBeakXPos = Birdy.BirdyObject.offset().left + Birdy.BirdyObject.width();
+                        const PipeRightXPos = $(this).offset().left + $(this).width();
                         if(!$(this).data('scored') && BirdyBeakXPos > PipeRightXPos){
                             CurrentScore++;
                             $(this).data('scored', true);
+                            $('#CurrentScore').text(CurrentScore);
                         }
-                    });          
-                    $('#CurrentScore').html(CurrentScore);
+                    }); 
                 }
-                               
+
+                // Start the game
                 startGame();
                 
-                jQuery.fn.rotate = function(degrees) {
-                    return $(this).css({'transform': 'rotate('+degrees+'deg)'});
+                // Rotation plugin
+                jQuery.fn.rotate = function(deg) {
+                    return this.css({'transform': `rotate(${deg}deg)`});
                 };
-                
-                function setCookie(cname,cvalue,exdays) {
-                    var d = new Date();
-                    d.setTime(d.getTime()+(exdays*24*60*60*1000));
-                    document.cookie = cname + "=" + cvalue + ";expires=" + d.toUTCString();
+
+                // Cookie functions
+                function setCookie(name, value, days) {
+                    const d = new Date();
+                    d.setTime(d.getTime() + (days*24*60*60*1000));
+                    document.cookie = `${name}=${value};expires=${d.toUTCString()};path=/`;
                 }
                 
-                function getCookie(cname) {
-                    var name = cname + "=";
-                    var ca = document.cookie.split(';');
-                    for(var i=0; i<ca.length; i++) {
-                        var c = ca[i].trim();
-                        if(c.indexOf(name) == 0) return c.substring(name.length,c.length);
+                function getCookie(name) {
+                    const cookies = document.cookie.split(';');
+                    for(let c of cookies) {
+                        c = c.trim();
+                        if(c.startsWith(name + '=')) return c.substring(name.length+1);
                     }
                     return "";
                 }
